@@ -61,7 +61,7 @@ public:
 private:
   void topic_callback(const tutorial_interfaces::msg::Num::SharedPtr msg) const       // CHANGE
   {
-    RCLCPP_INFO(this->get_logger(), "I heard: '%d'", msg->num);              // CHANGE
+    RCLCPP_INFO(this->get_logger(), "I heard: '%ld'", msg->num);              // CHANGE
   }
   rclcpp::Subscription<tutorial_interfaces::msg::Num>::SharedPtr subscription_;       // CHANGE
 };
