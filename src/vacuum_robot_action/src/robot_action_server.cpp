@@ -3,15 +3,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
-#include "vacuum_robot/action/charge_battery.hpp"
+#include "vacuum_robot_action/action/charge_battery.hpp" 
 
-namespace vacuum_robot
+namespace vacuum_robot_action
 {
 
 class RobotActionServer : public rclcpp::Node
 {
 public:
-    using ChargeBattery = vacuum_robot::action::ChargeBattery;
+    using ChargeBattery = vacuum_robot_action::action::ChargeBattery;  // ✅ FIXED
     using GoalHandleCharge = rclcpp_action::ServerGoalHandle<ChargeBattery>;
 
     explicit RobotActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
@@ -130,6 +130,6 @@ private:
     }
 };
 
-}  // namespace vacuum_robot
+}  // namespace vacuum_robot_action
 
-RCLCPP_COMPONENTS_REGISTER_NODE(vacuum_robot::RobotActionServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(vacuum_robot_action::RobotActionServer)

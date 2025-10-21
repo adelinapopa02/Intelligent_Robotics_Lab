@@ -2,15 +2,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
-#include "vacuum_robot/action/charge_battery.hpp"
+#include "vacuum_robot_action/action/charge_battery.hpp"
 
-namespace vacuum_robot
+namespace vacuum_robot_action
 {
 
 class ChargingStationActionClient : public rclcpp::Node
 {
 public:
-    using ChargeBattery = vacuum_robot::action::ChargeBattery;
+    using ChargeBattery = vacuum_robot_action::action::ChargeBattery;  // ✅ FIXED
     using GoalHandleCharge = rclcpp_action::ClientGoalHandle<ChargeBattery>;
 
     explicit ChargingStationActionClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
@@ -37,7 +37,7 @@ public:
 
         auto goal_msg = ChargeBattery::Goal();
         goal_msg.header.stamp = this->now();
-        goal_msg.power = 70;  // Provide x% charging power (must be valid to be accepted by server)
+        goal_msg.power = 70;  // Provide 70% charging power (must be valid to be accepted by server)
         
         RCLCPP_INFO(this->get_logger(), "Sending goal: power = %d%%", goal_msg.power);
 
@@ -96,6 +96,6 @@ private:
     }
 };
 
-}  // namespace vacuum_robot
+}  // namespace vacuum_robot_action
 
-RCLCPP_COMPONENTS_REGISTER_NODE(vacuum_robot::ChargingStationActionClient)
+RCLCPP_COMPONENTS_REGISTER_NODE(vacuum_robot_action::ChargingStationActionClient)

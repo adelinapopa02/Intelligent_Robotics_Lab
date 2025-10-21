@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
-#include "vacuum_robot/msg/charge_status.hpp"
+#include "vacuum_robot_pubsub/msg/charge_status.hpp"
 
 using namespace std::chrono_literals;
 
@@ -12,7 +12,7 @@ public:
     RobotNode() : Node("robot"), current_room_index_(0), battery_level_(100.0)
     {
         // Create publisher on /charge_status topic
-        publisher_ = this->create_publisher<vacuum_robot::msg::ChargeStatus>(
+        publisher_ = this->create_publisher<vacuum_robot_pubsub::msg::ChargeStatus>(
             "/charge_status", 10);
         
         // Create timer to publish at 5Hz (200ms period)
@@ -35,7 +35,7 @@ private:
     void timer_callback()
     {
         // Create message
-        auto message = vacuum_robot::msg::ChargeStatus();
+        auto message = vacuum_robot_pubsub::msg::ChargeStatus();
         
         // Get current room
         auto current_room = rooms_[current_room_index_];
@@ -73,7 +73,7 @@ private:
         std::string name;
     };
     
-    rclcpp::Publisher<vacuum_robot::msg::ChargeStatus>::SharedPtr publisher_;
+    rclcpp::Publisher<vacuum_robot_pubsub::msg::ChargeStatus>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
     std::vector<Room> rooms_;
     size_t current_room_index_;

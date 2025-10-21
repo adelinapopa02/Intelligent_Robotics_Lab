@@ -1,6 +1,6 @@
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "vacuum_robot/msg/charge_status.hpp"
+#include "vacuum_robot_pubsub/msg/charge_status.hpp"
 
 class ChargingStationNode : public rclcpp::Node
 {
@@ -8,7 +8,7 @@ public:
     ChargingStationNode() : Node("charging_station")
     {
         // Create subscriber to /charge_status topic
-        subscription_ = this->create_subscription<vacuum_robot::msg::ChargeStatus>(
+        subscription_ = this->create_subscription<vacuum_robot_pubsub::msg::ChargeStatus>(
             "/charge_status", 10,
             std::bind(&ChargingStationNode::topic_callback, this, std::placeholders::_1));
         
@@ -17,7 +17,7 @@ public:
     }
 
 private:
-    void topic_callback(const vacuum_robot::msg::ChargeStatus::SharedPtr msg)
+    void topic_callback(const vacuum_robot_pubsub::msg::ChargeStatus::SharedPtr msg)
     {
         // Print received information
         RCLCPP_INFO(this->get_logger(), 
@@ -34,7 +34,7 @@ private:
         }
     }
     
-    rclcpp::Subscription<vacuum_robot::msg::ChargeStatus>::SharedPtr subscription_;
+    rclcpp::Subscription<vacuum_robot_pubsub::msg::ChargeStatus>::SharedPtr subscription_;
 };
 
 int main(int argc, char * argv[])

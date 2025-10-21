@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(vacuum_robot)
+project(vacuum_robot_action)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -18,14 +18,13 @@ find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-# Generate custom messages AND actions
+# Generate custom action
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/ChargeStatus.msg"
   "action/ChargeBattery.action"
   DEPENDENCIES std_msgs
 )
 
-# This is important for using the generated messages/actions in the same package
+# This is important for using the generated action in the same package
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 # Robot node executable (action server)
@@ -41,7 +40,7 @@ ament_target_dependencies(robot_action_server
   std_msgs)
 target_link_libraries(robot_action_server "${cpp_typesupport_target}")
 rclcpp_components_register_node(robot_action_server 
-  PLUGIN "vacuum_robot::RobotActionServer" 
+  PLUGIN "vacuum_robot_action::RobotActionServer" 
   EXECUTABLE robot_node)
 
 # Charging station node executable (action client)
@@ -57,7 +56,7 @@ ament_target_dependencies(charging_station_action_client
   std_msgs)
 target_link_libraries(charging_station_action_client "${cpp_typesupport_target}")
 rclcpp_components_register_node(charging_station_action_client 
-  PLUGIN "vacuum_robot::ChargingStationActionClient" 
+  PLUGIN "vacuum_robot_action::ChargingStationActionClient" 
   EXECUTABLE charging_station_node)
 
 # Install executables
