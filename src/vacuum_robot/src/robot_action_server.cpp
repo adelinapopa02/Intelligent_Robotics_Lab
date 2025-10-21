@@ -41,7 +41,20 @@ private:
         (void)uuid;
         RCLCPP_INFO(this->get_logger(), "Received goal request with power: %d%%", goal->power);
         
-        // Accept all goals for now
+        // Reject if power is invalid (0 or negative, or over 100%)
+        if (goal->power <= 0 || goal->power > 100) {
+            RCLCPP_WARN(this->get_logger(), "Rejecting goal: Invalid power level (%d%%)", goal->power);
+            return rclcpp_action::GoalResponse::REJECT;
+        }
+        
+        // Reject if battery is already full
+        if (current_battery_ >= 100.0) {
+            RCLCPP_WARN(this->get_logger(), "Rejecting goal: Battery already full (%.1f%%)", current_battery_);
+            return rclcpp_action::GoalResponse::REJECT;
+        }
+        
+        // Accept valid requests
+        RCLCPP_INFO(this->get_logger(), "Accepting charging goal");
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
     }
 
@@ -69,15 +82,21 @@ private:
         
         // Calculate target battery level: min(100, current + power)
         float target_battery = std::min(100.0f, current_battery_ + goal->power);
-        float battery_increment = (target_battery - current_battery_) / 60.0f;  // 60 seconds
+        float battery_to_charge = target_battery - current_battery_;
+        
+        // Calculate time needed: 1 minute to charge from 0% to 100%
+        // So time_needed = (battery_to_charge / 100) * 60 seconds
+        float total_time_seconds = (battery_to_charge / 100.0f) * 60.0f;
+        int num_feedback_updates = static_cast<int>(total_time_seconds);  // 1 feedback per second
+        float battery_increment = battery_to_charge / total_time_seconds;
         
         RCLCPP_INFO(this->get_logger(), 
-            "Charging from %.1f%% to %.1f%% over 60 seconds", 
-            current_battery_, target_battery);
+            "Charging from %.1f%% to %.1f%% (%.1f%% increase) over %.1f seconds", 
+            current_battery_, target_battery, battery_to_charge, total_time_seconds);
         
         rclcpp::Rate loop_rate(1);  // 1 Hz for feedback
         
-        for (int i = 0; i < 60 && rclcpp::ok(); ++i) {
+        for (int i = 0; i < num_feedback_updates && rclcpp::ok(); ++i) {
             // Check if there is a cancel request
             if (goal_handle->is_canceling()) {
                 result->header.stamp = this->now();

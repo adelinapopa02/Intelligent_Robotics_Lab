@@ -37,7 +37,7 @@ public:
 
         auto goal_msg = ChargeBattery::Goal();
         goal_msg.header.stamp = this->now();
-        goal_msg.power = 80;  // Provide 80% charging power
+        goal_msg.power = 70;  // Provide x% charging power (must be valid to be accepted by server)
         
         RCLCPP_INFO(this->get_logger(), "Sending goal: power = %d%%", goal_msg.power);
 
