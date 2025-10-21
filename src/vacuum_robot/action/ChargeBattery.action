@@ -1,0 +1,11 @@
+# Goal
+std_msgs/Header header
+int32 power
+---
+# Result
+std_msgs/Header header
+int32 final_battery_level
+---
+# Feedback
+std_msgs/Header header
+float32 current_battery_level
