@@ -11,7 +11,7 @@ namespace vacuum_robot_action
 class RobotActionServer : public rclcpp::Node
 {
 public:
-    using ChargeBattery = vacuum_robot_action::action::ChargeBattery;  // ✅ FIXED
+    using ChargeBattery = vacuum_robot_action::action::ChargeBattery; 
     using GoalHandleCharge = rclcpp_action::ServerGoalHandle<ChargeBattery>;
 
     explicit RobotActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())

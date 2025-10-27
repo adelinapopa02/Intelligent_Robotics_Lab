@@ -10,7 +10,7 @@ namespace vacuum_robot_action
 class ChargingStationActionClient : public rclcpp::Node
 {
 public:
-    using ChargeBattery = vacuum_robot_action::action::ChargeBattery;  // ✅ FIXED
+    using ChargeBattery = vacuum_robot_action::action::ChargeBattery; 
     using GoalHandleCharge = rclcpp_action::ClientGoalHandle<ChargeBattery>;
 
     explicit ChargingStationActionClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
