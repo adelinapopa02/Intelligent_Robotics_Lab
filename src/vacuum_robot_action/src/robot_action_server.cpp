@@ -41,8 +41,8 @@ private:
         (void)uuid;
         RCLCPP_INFO(this->get_logger(), "Received goal request with power: %d%%", goal->power);
         
-        // Reject if power is invalid (0 or negative, or over 100%)
-        if (goal->power <= 0 || goal->power > 100) {
+        // Reject if power is invalid (0 or negative)
+        if (goal->power <= 0) {
             RCLCPP_WARN(this->get_logger(), "Rejecting goal: Invalid power level (%d%%)", goal->power);
             return rclcpp_action::GoalResponse::REJECT;
         }
