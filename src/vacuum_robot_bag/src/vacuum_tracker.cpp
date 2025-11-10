@@ -21,12 +21,12 @@ public:
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
         timer_ = this->create_wall_timer(
-            1000ms, 
+            500ms, 
             std::bind(&VacuumTracker::timer_callback, this));
 
         path_pub_ = this->create_publisher<nav_msgs::msg::Path>("vc_path", 10);
 
-        RCLCPP_INFO(this->get_logger(), "Vacuum Tracker Node Started (10 Hz, No Filter)");
+        RCLCPP_INFO(this->get_logger(), "Vacuum Tracker Node Started");
     }
 
     ~VacuumTracker()
@@ -67,6 +67,13 @@ private:
             double vc_relative_x = vc_x - cs_x_;
             double vc_relative_y = vc_y - cs_y_;
             
+            // Calculate distance for immediate logging
+            double current_distance = std::sqrt(vc_relative_x * vc_relative_x + vc_relative_y * vc_relative_y);
+
+            RCLCPP_INFO(this->get_logger(), 
+                        "VC w.r.t. CS: (%.3f, %.3f), distance = %.3f m", 
+                        vc_relative_x, vc_relative_y, current_distance);
+            
             // Store the position
             vc_path_x_.push_back(vc_relative_x);
             vc_path_y_.push_back(vc_relative_y);
@@ -90,21 +97,15 @@ private:
             }
 
             path_pub_->publish(path_msg);
-
-            if (vc_path_x_.size() % 100 == 0) 
-            {
-                RCLCPP_INFO(this->get_logger(), "Recorded %zu positions", vc_path_x_.size());
-            }
         }
         catch (tf2::TransformException &ex)
         {
-            // Silently continue, transforms may not be available yet
+
         }
     }
 
     void save_to_csv()
     {
-        // Use original filename and original structure
         std::string filename = "vc_path.csv"; 
         std::ofstream file(filename);
 
@@ -114,10 +115,8 @@ private:
             return;
         }
 
-        // ORIGINAL 3-COLUMN STRUCTURE
         file << "timestamp,x,y\n"; 
         
-        // Use raw timestamp for plotting script compatibility (as in original code)
         for (size_t i = 0; i < vc_path_x_.size(); ++i)
         {
             file << timestamps_[i] << "," 
