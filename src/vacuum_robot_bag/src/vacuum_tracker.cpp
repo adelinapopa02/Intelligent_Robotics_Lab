@@ -7,6 +7,10 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
+#include <tf2/exceptions.h>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 class VacuumTracker : public rclcpp::Node
 {
@@ -17,12 +21,12 @@ public:
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
         timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(100),
+            1000ms, 
             std::bind(&VacuumTracker::timer_callback, this));
 
         path_pub_ = this->create_publisher<nav_msgs::msg::Path>("vc_path", 10);
 
-        RCLCPP_INFO(this->get_logger(), "Vacuum Tracker Node Started");
+        RCLCPP_INFO(this->get_logger(), "Vacuum Tracker Node Started (10 Hz, No Filter)");
     }
 
     ~VacuumTracker()
@@ -33,16 +37,17 @@ public:
 private:
     void timer_callback()
     {
+        geometry_msgs::msg::TransformStamped vc_to_floor;
+        geometry_msgs::msg::TransformStamped cs_to_floor;
+
         try
         {
             // Get transform from tag36h11:2 (VC) to tag36h11:0 (floor)
-            geometry_msgs::msg::TransformStamped vc_to_floor = 
-                tf_buffer_->lookupTransform("tag36h11:0", "tag36h11:2", 
+            vc_to_floor = tf_buffer_->lookupTransform("tag36h11:0", "tag36h11:2", 
                                            tf2::TimePointZero);
 
             // Get transform from tag36h11:1 (CS) to tag36h11:0 (floor)
-            geometry_msgs::msg::TransformStamped cs_to_floor = 
-                tf_buffer_->lookupTransform("tag36h11:0", "tag36h11:1", 
+            cs_to_floor = tf_buffer_->lookupTransform("tag36h11:0", "tag36h11:1", 
                                            tf2::TimePointZero);
 
             // Project VC position onto the floor plane (z=0)
@@ -61,31 +66,7 @@ private:
             // Transform VC position relative to CS
             double vc_relative_x = vc_x - cs_x_;
             double vc_relative_y = vc_y - cs_y_;
-
-            const double MAX_JUMP_DISTANCE = 0.4; // meters
-
-            // Only apply filtering if there's a previous point to compare against
-            if (!vc_path_x_.empty())
-            {
-                double last_x = vc_path_x_.back();
-                double last_y = vc_path_y_.back();
-
-                double current_x = vc_relative_x;
-                double current_y = vc_relative_y;
-
-                double distance = std::sqrt(std::pow(current_x - last_x, 2) + 
-                                            std::pow(current_y - last_y, 2));
-
-                if (distance > MAX_JUMP_DISTANCE)
-                {
-                    RCLCPP_WARN(this->get_logger(), 
-                                "Detected potential outlier (jump of %.3f m). Skipping point.", 
-                                distance);
-                    // Do NOT push this point to the path vectors
-                    return; // Skip adding this point to the path and publishing this cycle
-                }
-            }
-
+            
             // Store the position
             vc_path_x_.push_back(vc_relative_x);
             vc_path_y_.push_back(vc_relative_y);
@@ -95,7 +76,7 @@ private:
             // Create and publish path for visualization
             nav_msgs::msg::Path path_msg;
             path_msg.header.stamp = this->now();
-            path_msg.header.frame_id = "tag36h11:1";
+            path_msg.header.frame_id = "tag36h11:1"; // Relative to CS
 
             for (size_t i = 0; i < vc_path_x_.size(); ++i)
             {
@@ -110,7 +91,7 @@ private:
 
             path_pub_->publish(path_msg);
 
-            if (vc_path_x_.size() % 10 == 0)
+            if (vc_path_x_.size() % 100 == 0) 
             {
                 RCLCPP_INFO(this->get_logger(), "Recorded %zu positions", vc_path_x_.size());
             }
@@ -123,7 +104,8 @@ private:
 
     void save_to_csv()
     {
-        std::string filename = "vc_path.csv";
+        // Use original filename and original structure
+        std::string filename = "vc_path.csv"; 
         std::ofstream file(filename);
 
         if (!file.is_open())
@@ -132,7 +114,10 @@ private:
             return;
         }
 
-        file << "timestamp,x,y\n";
+        // ORIGINAL 3-COLUMN STRUCTURE
+        file << "timestamp,x,y\n"; 
+        
+        // Use raw timestamp for plotting script compatibility (as in original code)
         for (size_t i = 0; i < vc_path_x_.size(); ++i)
         {
             file << timestamps_[i] << "," 
@@ -143,12 +128,16 @@ private:
         file.close();
         RCLCPP_INFO(this->get_logger(), "Saved %zu positions to %s", 
                     vc_path_x_.size(), filename.c_str());
-        RCLCPP_INFO(this->get_logger(), "Final VC position relative to CS: (%.3f, %.3f)", 
-                    vc_path_x_.back(), vc_path_y_.back());
         
-        double distance = std::sqrt(vc_path_x_.back() * vc_path_x_.back() + 
-                                   vc_path_y_.back() * vc_path_y_.back());
-        RCLCPP_INFO(this->get_logger(), "Distance from CS: %.3f meters", distance);
+        if (!vc_path_x_.empty()) {
+            double final_x = vc_path_x_.back();
+            double final_y = vc_path_y_.back();
+            RCLCPP_INFO(this->get_logger(), "Final VC position relative to CS: (%.3f, %.3f)", 
+                        final_x, final_y);
+            
+            double distance = std::sqrt(final_x * final_x + final_y * final_y);
+            RCLCPP_INFO(this->get_logger(), "Distance from CS: %.3f meters", distance);
+        }
     }
 
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
