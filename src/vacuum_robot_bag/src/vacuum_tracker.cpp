@@ -62,6 +62,30 @@ private:
             double vc_relative_x = vc_x - cs_x_;
             double vc_relative_y = vc_y - cs_y_;
 
+            const double MAX_JUMP_DISTANCE = 0.4; // meters
+
+            // Only apply filtering if there's a previous point to compare against
+            if (!vc_path_x_.empty())
+            {
+                double last_x = vc_path_x_.back();
+                double last_y = vc_path_y_.back();
+
+                double current_x = vc_relative_x;
+                double current_y = vc_relative_y;
+
+                double distance = std::sqrt(std::pow(current_x - last_x, 2) + 
+                                            std::pow(current_y - last_y, 2));
+
+                if (distance > MAX_JUMP_DISTANCE)
+                {
+                    RCLCPP_WARN(this->get_logger(), 
+                                "Detected potential outlier (jump of %.3f m). Skipping point.", 
+                                distance);
+                    // Do NOT push this point to the path vectors
+                    return; // Skip adding this point to the path and publishing this cycle
+                }
+            }
+
             // Store the position
             vc_path_x_.push_back(vc_relative_x);
             vc_path_y_.push_back(vc_relative_y);
